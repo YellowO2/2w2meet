@@ -1,7 +1,10 @@
 @import "tailwindcss";
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 :root {
     --body-bg: var(--p-surface-50);
@@ -35,7 +38,7 @@ body {
     background-color: var(--body-bg);
     font-weight: normal;
     color: var(--body-text-color);
-    padding: 1rem;
+    /* padding: 1rem; */
 }
 
 .card {
@@ -53,7 +56,7 @@ h1 {
 }
 
 h2 {
-    font-size: 1.5rem;
-    /* font-weight: 700; */
-    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    font-weight: 300;
+    margin-bottom: 0.8rem;
 }

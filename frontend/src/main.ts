@@ -8,6 +8,7 @@ import InputText from 'primevue/inputtext';
 // import Slider from 'primevue/slider';
 import Aura  from '@primeuix/themes/aura';
 import "./style.css";
+import 'primeicons/primeicons.css';
 
 const app = createApp(App);
 app.use(PrimeVue, {

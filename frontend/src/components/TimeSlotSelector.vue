@@ -15,6 +15,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  disabled: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits(["update:selected"]);
@@ -52,6 +56,7 @@ const onSelectionChange = (event) => {
     </h3>
     <Listbox
       v-model="selectedTimes"
+      :disabled="disabled"
       :options="timeSlots"
       optionLabel="label"
       :multiple="true"
@@ -72,7 +77,7 @@ const onSelectionChange = (event) => {
 
 <style>
 .time-slot-column {
-  min-width: 200px;
+  min-width: 100px;
 }
 .p-listbox-list-container {
   max-height: none !important;
