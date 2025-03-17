@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import Listbox from "primevue/listbox";
 
 const props = defineProps({
@@ -14,6 +14,10 @@ const props = defineProps({
   participants: {
     type: Array,
     default: () => [],
+  },
+  currentUserSelections: {
+    type: Set,
+    default: () => new Set(),
   },
   disabled: {
     type: Boolean,
@@ -31,12 +35,16 @@ const timeSlots = computed(() => {
     const hour = Math.floor(time);
     const minute = time % 1 === 0.5 ? "30" : "00";
     const timeString = `${hour}:${minute}`;
+    const slotId = `${props.date}-${timeString}`;
+
+    // Count participants who selected this slot
     const availableParticipants = props.participants.filter((p) =>
-      p.availableTimes.includes(`${props.date}-${timeString}`)
+      p.availableTimes.includes(slotId)
     );
 
     slots.push({
       time: timeString,
+      slotId,
       participants: availableParticipants,
       label: `${timeString} (${availableParticipants.length})`,
     });
@@ -44,8 +52,20 @@ const timeSlots = computed(() => {
   return slots;
 });
 
+// Sync the Listbox UI when parent updates currentUserSelections
+watch(
+  () => props.currentUserSelections,
+  (newSelections) => {
+    selectedTimes.value = timeSlots.value.filter((slot) =>
+      newSelections.has(slot.slotId)
+    );
+  },
+  { immediate: true }
+);
+
 const onSelectionChange = (event) => {
-  emit("update:selected", event.value);
+  const selectedSlotIds = event.value.map((slot) => slot.slotId);
+  emit("update:selected", selectedSlotIds);
 };
 </script>
 
@@ -67,7 +87,7 @@ const onSelectionChange = (event) => {
         <div class="flex flex-col">
           <span>{{ slotProps.option.time }}</span>
           <span class="text-xs text-gray-500">
-            {{ slotProps.option.participants.length }} available
+            {{ slotProps.option.participants.length }}
           </span>
         </div>
       </template>

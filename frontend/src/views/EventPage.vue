@@ -94,30 +94,31 @@ function formatTime(value) {
   return `${hour}:${minute}`;
 }
 
-function toggleTimeSlot(date, time) {
+function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   if (!currentUser.value) {
     alert("Please log in to select time slots.");
     return;
   }
 
-  const slot = `${date}-${time}`;
-  if (selectedTimeSlots.value.has(slot)) {
-    selectedTimeSlots.value.delete(slot);
-  } else {
-    selectedTimeSlots.value.add(slot);
-  }
-
-  // Update current user's availability
   const userIndex = participants.value.findIndex(
     (p) => p.name === currentUser.value.name
   );
+
   if (userIndex !== -1) {
-    console.log(
-      "Updating availability for user:",
-      participants.value[userIndex]
-    );
+    const datePrefix = date;
+    const existingSlots = new Set(participants.value[userIndex].availableTimes);
+
+    // Remove existing selections for this date
     participants.value[userIndex].availableTimes = Array.from(
-      selectedTimeSlots.value
+      existingSlots
+    ).filter((slot) => !slot.startsWith(datePrefix));
+
+    // Add new selections
+    participants.value[userIndex].availableTimes.push(...selectedSlotIds);
+
+    // ✅ Update local selectedTimeSlots to reflect user choices
+    selectedTimeSlots.value = new Set(
+      participants.value[userIndex].availableTimes
     );
   }
 }
@@ -204,8 +205,9 @@ function login() {
                 :date="date"
                 :time-range="eventData.timeRange"
                 :participants="participants"
+                :current-user-selections="selectedTimeSlots"
                 :disabled="!currentUser"
-                @update:selected="(times) => toggleTimeSlot(date, times)"
+                @update:selected="(slots) => toggleTimeSlots(date, slots)"
               />
             </div>
           </div>
