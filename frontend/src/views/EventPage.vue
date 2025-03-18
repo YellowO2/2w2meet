@@ -10,14 +10,26 @@ import TabPanel from "primevue/tabpanel";
 import type { Location } from "../models/Location";
 import type { Participant } from "../models/Participant";
 import type { TimeSlot } from "../models/TimeSlot";
+import type { Event } from "../models/Event";
 
 // Mock data
-const eventData = {
-  eventName: "testeventname",
-  dateRange: ["2025-03-09T16:00:00.000Z", "2025-03-12T16:00:00.000Z"],
-  timeRange: [9, 17],
-  selectedLocation: "50 Nanyang Ave, Singapore 639798",
+const eventData: Event = {
+  // dateRange: ["2025-03-09T16:00:00.000Z", "2025-03-12T16:00:00.000Z"],
+  // timeRange: [9, 17],
+  area: "50 Nanyang Ave, Singapore 639798",
   responseDeadline: "2025-03-24T16:00:00.000Z",
+  id: "",
+  name: "",
+  dateRange: {
+    start: "2025-03-09T16:00:00.000Z",
+    end: "2025-03-12T16:00:00.000Z",
+  },
+  timeRange: {
+    start: 9,
+    end: 17,
+  },
+  meetupLocations: [],
+  participants: [],
 };
 
 const email = ref("");
@@ -86,8 +98,8 @@ const userName = ref("");
 const userPassword = ref("");
 
 const dates = computed(() => {
-  const start = new Date(eventData.dateRange[0]);
-  const end = new Date(eventData.dateRange[1]);
+  const start = new Date(eventData.dateRange.start);
+  const end = new Date(eventData.dateRange.end);
   const dates = [];
   for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
     dates.push(new Date(d).toISOString());
@@ -201,8 +213,8 @@ const userLocationVote = computed(() => {
 
 <template>
   <div class="p-4">
-    <h1>{{ eventData.eventName }}</h1>
-    <p>Location: {{ eventData.selectedLocation }}</p>
+    <h1>{{ eventData.name }}</h1>
+    <p>Location: {{ eventData.area }}</p>
 
     <!-- Copy URL and User Info Section -->
     <div class="mb-4 mt-4 flex justify-between items-center">
@@ -242,7 +254,10 @@ const userLocationVote = computed(() => {
                 v-for="date in dates"
                 :key="date"
                 :date="date"
-                :time-range="eventData.timeRange"
+                :time-range="[
+                  eventData.timeRange.start,
+                  eventData.timeRange.end,
+                ]"
                 :participants="participants"
                 :current-user-selections="selectedTimeSlots"
                 :disabled="!currentUser"
