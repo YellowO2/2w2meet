@@ -1,48 +1,62 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from "vue";
 import Listbox from "primevue/listbox";
-import Button from "primevue/button";
+import type { Location } from "../models/Location";
 
 const props = defineProps({
   locations: {
-    type: Array,
+    type: Array as () => Location[],
     required: true,
   },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
+  modelValue: String,
+  disabled: Boolean,
 });
 
-const emit = defineEmits(["vote"]);
-
-function voteLocation(location) {
-  emit("vote", location);
-}
+const emit = defineEmits(["update:modelValue"]);
 </script>
 
 <template>
-  <div class="location-voting">
-    <Listbox
-      :options="locations"
-      optionLabel="name"
-      class="w-full"
-      :disabled="disabled"
-    >
-      <template #option="slotProps">
-        <div class="flex justify-between items-center p-2">
-          <div>
-            <div class="font-bold">{{ slotProps.option.name }}</div>
-            <div class="text-sm text-gray-600">
-              {{ slotProps.option.distance }} • {{ slotProps.option.rating }} •
-              {{ slotProps.option.category }}
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span>Votes: {{ slotProps.option.votes }}</span>
-          </div>
+  <Listbox
+    :modelValue="modelValue"
+    :options="locations"
+    optionLabel="name"
+    :disabled="disabled"
+    class="w-full"
+    @change="(e) => emit('update:modelValue', e.value.name)"
+  >
+    <template #option="{ option }">
+      <div class="flex justify-between items-center p-3">
+        <div class="font-bold">{{ option.name }}</div>
+        <div class="flex items-center gap-2">
+          <span class="bg-gray-100 px-2 py-1 rounded">
+            {{ option.votedBy.length }} votes
+          </span>
         </div>
-      </template>
-    </Listbox>
-  </div>
+      </div>
+    </template>
+  </Listbox>
 </template>
+
+<style scoped>
+/* :deep(.p-listbox) {
+  border: none;
+  background: transparent;
+} */
+
+/* :deep(.p-listbox-item) {
+  margin: 0.5rem 0;
+  border: 1px solid var(--surface-200);
+  border-radius: 0.5rem;
+  background: white;
+} */
+/* 
+:deep(.p-listbox-item.p-highlight) {
+  background: var(--primary-50);
+  border-color: var(--primary-500);
+  color: var(--text-color);
+} */
+
+/* :deep(.p-listbox-list) {
+  padding: 0.5rem;
+} */
+</style>

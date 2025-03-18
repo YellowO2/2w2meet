@@ -7,7 +7,7 @@ import TimeSlotSelector from "../components/TimeSlotSelector.vue";
 import LocationVoting from "../components/LocationVoting.vue";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
-import Dialog from "primevue/dialog";
+import type { Location } from "../models/Location";
 
 // Mock data
 const eventData = {
@@ -23,13 +23,13 @@ const uniqueUrl = ref("https://example.com/event/unique-id");
 const participantsAvailability = ref([]); // Mock participant availability data
 const selectedTimeSlots = ref(new Set());
 const weatherInfo = ref({}); // Mock weather information
-const meetupLocations = ref([
+const meetupLocations = ref<Location[]>([
   {
     name: "Starbucks",
     distance: "0.5 km",
     rating: "4.5 stars",
     category: "Cafe",
-    votes: 2,
+    votedBy: ["Person A"],
     link: "https://maps.google.com",
   },
   {
@@ -37,7 +37,7 @@ const meetupLocations = ref([
     distance: "0.8 km",
     rating: "4.2 stars",
     category: "Cafe",
-    votes: 2,
+    votedBy: ["Person A"],
     link: "https://maps.google.com",
   },
   {
@@ -45,7 +45,7 @@ const meetupLocations = ref([
     distance: "0.1 km",
     rating: "4.2 stars",
     category: "Cafe",
-    votes: 2,
+    votedBy: ["Person B"],
     link: "https://maps.google.com",
   },
   // Add more mock locations here
@@ -121,6 +121,8 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
       participants.value[userIndex].availableTimes
     );
   }
+
+  console.log("new participants", participants.value[userIndex]);
 }
 
 function copyUrl() {
@@ -134,14 +136,31 @@ function copyUrl() {
     });
 }
 
-function voteLocation(location) {
+function voteLocation(locationName: string) {
+  if (!currentUser.value) {
+    alert("Please log in to vote.");
+    return;
+  }
+
+  const location = meetupLocations.value.find(
+    (loc) => loc.name === locationName
+  );
+  if (!location) return;
+
+  const userIndex = location.votedBy.indexOf(currentUser.value.name);
+
+  // Remove from all other locations first
   meetupLocations.value.forEach((loc) => {
-    if (loc.name === location.name) {
-      loc.votes += 1;
-    } else {
-      loc.votes = Math.max(0, loc.votes - 1);
+    const idx = loc.votedBy.indexOf(currentUser.value.name);
+    if (idx !== -1) {
+      loc.votedBy.splice(idx, 1);
     }
   });
+
+  // Add to selected location if it wasn't the one we removed from
+  if (userIndex === -1) {
+    location.votedBy.push(currentUser.value.name);
+  }
 }
 
 function login() {
@@ -158,6 +177,14 @@ function login() {
     });
   }
 }
+
+const userLocationVote = computed(() => {
+  if (!currentUser.value) return null;
+  const votedLocation = meetupLocations.value.find((loc) =>
+    loc.votedBy.includes(currentUser.value.name)
+  );
+  return votedLocation?.name || null;
+});
 </script>
 
 <template>
@@ -220,7 +247,7 @@ function login() {
           <LocationVoting
             :locations="meetupLocations"
             :disabled="!currentUser"
-            @vote="voteLocation"
+            v-on:update:model-value="voteLocation"
           />
         </div>
       </TabPanel>

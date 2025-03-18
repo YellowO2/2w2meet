@@ -1,8 +1,10 @@
 export interface Location {
-    id: string;
+  
     name: string;
-    distance: number;
-    rating: number;
+    distance: string;
+    rating: string;
     category: string;
-    voteCount: number;
+    votedBy: Array<string>;
+    link: string;
 }
+
