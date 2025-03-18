@@ -23,6 +23,8 @@ const selectedTimeSlots = ref(new Set<string>());
 const meetupLocations = ref<Location[]>([]);
 const currentUser = ref<Participant | null>();
 const userName = ref("");
+const hasUnsavedChanges = ref(false);
+const originalEventState = ref<Event | null>(null);
 
 // Fetch event data on mount
 onMounted(async () => {
@@ -30,11 +32,29 @@ onMounted(async () => {
   await controller.fetchEvent(eventId);
   event.value = controller.getEvent().value;
 
-  // Initialize local states
+  // Store original state for comparison
   if (event.value) {
+    // Used to create deep copy
+    originalEventState.value = JSON.parse(JSON.stringify(event.value));
     meetupLocations.value = event.value.meetupLocations;
   }
 });
+
+// Add warning if they try to leave without saving
+onMounted(() => {
+  window.addEventListener("beforeunload", (e) => {
+    if (hasUnsavedChanges.value) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+});
+
+function checkForChanges() {
+  if (!event.value || !originalEventState.value) return;
+  hasUnsavedChanges.value =
+    JSON.stringify(event.value) !== JSON.stringify(originalEventState.value);
+}
 
 // Computed properties
 const dates = computed(() => {
@@ -48,7 +68,6 @@ const dates = computed(() => {
   return dates;
 });
 
-// Methods
 function login() {
   if (userName.value.trim()) {
     currentUser.value = {
@@ -63,10 +82,11 @@ function login() {
 function saveEvent() {
   if (event.value) {
     controller.saveEvent(event.value);
+    originalEventState.value = JSON.parse(JSON.stringify(event.value));
+    hasUnsavedChanges.value = false;
     alert("Event saved successfully!");
   }
 }
-
 function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   if (!currentUser.value) {
     alert("Please log in to select time slots.");
@@ -95,6 +115,8 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
       event.value!.participants[userIndex].availability
     );
   }
+
+  checkForChanges();
 }
 
 function voteLocation(location: Location) {
@@ -115,6 +137,7 @@ function voteLocation(location: Location) {
 
   // Add vote to selected location
   location.votedBy.push(currentUser.value.name);
+  checkForChanges();
 }
 
 function copyUrl() {
@@ -130,9 +153,13 @@ function copyUrl() {
 }
 
 function logout() {
+  if (hasUnsavedChanges.value) {
+    const confirmed = window.confirm(
+      "You have unsaved changes. Are you sure you want to logout?"
+    );
+    if (!confirmed) return;
+  }
   location.reload();
-  // currentUser.value = null;
-  //refresh page
 }
 </script>
 
@@ -143,7 +170,14 @@ function logout() {
 
     <!-- Copy URL and User Info Section -->
     <div class="mb-4 mt-4 flex justify-between items-center">
-      <Button label="Save Event" icon="pi pi-save" @click="saveEvent" />
+      <Button
+        v-if="hasUnsavedChanges"
+        class="fixed shadow-lg"
+        label="Save Changes"
+        icon="pi pi-save"
+        @click="saveEvent"
+        severity="warning"
+      />
       <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
       <div v-if="currentUser" class="flex items-center gap-2">
         <span>Welcome, {{ currentUser.name }}</span>
