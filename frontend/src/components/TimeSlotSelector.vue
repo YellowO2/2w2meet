@@ -39,6 +39,8 @@ const timeSlots = computed<TimeSlot[]>(() => {
     const timeString = `${hour}:${minute}`;
     const slotId = `${props.date}-${timeString}`;
 
+    console.log("slotId", slotId);
+    console.log("p availability", props.participants[0].availability);
     const availableParticipants = props.participants.filter((p) =>
       p.availability.includes(slotId)
     );
