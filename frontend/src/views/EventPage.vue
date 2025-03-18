@@ -23,7 +23,6 @@ const selectedTimeSlots = ref(new Set<string>());
 const meetupLocations = ref<Location[]>([]);
 const currentUser = ref<Participant | null>();
 const userName = ref("");
-const userPassword = ref("");
 
 // Fetch event data on mount
 onMounted(async () => {
@@ -117,6 +116,24 @@ function voteLocation(location: Location) {
   // Add vote to selected location
   location.votedBy.push(currentUser.value.name);
 }
+
+function copyUrl() {
+  const url = route.fullPath as string;
+  navigator.clipboard
+    .writeText(url)
+    .then(() => {
+      alert("URL copied to clipboard.");
+    })
+    .catch(() => {
+      alert("Failed to copy URL. Please try again.");
+    });
+}
+
+function logout() {
+  location.reload();
+  // currentUser.value = null;
+  //refresh page
+}
 </script>
 
 <template>
@@ -127,13 +144,10 @@ function voteLocation(location: Location) {
     <!-- Copy URL and User Info Section -->
     <div class="mb-4 mt-4 flex justify-between items-center">
       <Button label="Save Event" icon="pi pi-save" @click="saveEvent" />
+      <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
       <div v-if="currentUser" class="flex items-center gap-2">
         <span>Welcome, {{ currentUser.name }}</span>
-        <Button
-          label="Logout"
-          @click="currentUser = null"
-          severity="secondary"
-        />
+        <Button label="Logout" @click="logout" severity="secondary" />
       </div>
     </div>
 
@@ -142,11 +156,11 @@ function voteLocation(location: Location) {
       <h2 class="font-semibold mb-2">Join the Event</h2>
       <div class="flex flex-col gap-3">
         <InputText v-model="userName" placeholder="Enter your name" />
-        <InputText
+        <!-- <InputText
           v-model="userPassword"
           type="password"
           placeholder="Password (optional)"
-        />
+        /> -->
         <Button label="Join Event" @click="login" />
       </div>
     </div>
