@@ -195,8 +195,10 @@ function logout() {
             :disabled="!currentUser"
             :user-vote="
               currentUser
-                ? meetupLocations.find((loc) =>
-                    loc.votedBy.includes(currentUser.name)
+                ? meetupLocations.find(
+                    (loc) =>
+                      currentUser?.name &&
+                      loc.votedBy.includes(currentUser.name)
                   )?.name || ''
                 : ''
             "

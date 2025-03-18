@@ -1,77 +1,54 @@
 import { ref } from "vue";
+import { db } from "../firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { Event } from "../models/Event";
 
 export class EventController {
   private event = ref<Event | null>(null);
 
-  async fetchEvent(eventId: string) {
-    // Simulate fetching event data from the backend
-    // Replace this with an actual API call
-    this.event.value = {
+  async createEvent(eventData: {
+    name: string;
+    dateRange: { start: string; end: string };
+    timeRange: { start: number; end: number };
+    area: string;
+    responseDeadline: string;
+  }): Promise<string> {
+    // Generate a unique ID for the new event
+    const eventId = Math.random().toString(36).substr(2, 6);
+
+    const newEvent: Event = {
       id: eventId,
-      name: "Sample Event",
-      area: "50 Nanyang Ave, Singapore 639798",
-      responseDeadline: "2025-03-24T16:00:00.000Z",
-      dateRange: {
-        start: "2025-03-09T16:00:00.000Z",
-        end: "2025-03-12T16:00:00.000Z",
-      },
-      timeRange: {
-        start: 9,
-        end: 17,
-      },
-      meetupLocations: [
-        {
-          name: "Starbucks",
-          distance: "0.5 km",
-          rating: "4.5 stars",
-          category: "Cafe",
-          votedBy: ["Person A"],
-          link: "https://maps.google.com",
-        },
-        {
-          name: "Moonbucks",
-          distance: "0.8 km",
-          rating: "4.2 stars",
-          category: "Cafe",
-          votedBy: ["Person A"],
-          link: "https://maps.google.com",
-        },
-        {
-          name: "Uranusbucks",
-          distance: "0.1 km",
-          rating: "4.2 stars",
-          category: "Cafe",
-          votedBy: ["Person B"],
-          link: "https://maps.google.com",
-        },
-      ],
-      participants: [
-        {
-          id: "1",
-          name: "Person A",
-          availability: [
-            "2025-03-09T16:00:00.000Z-9:00",
-            "2025-03-09T16:00:00.000Z-9:30",
-          ],
-        },
-        {
-          id: "2",
-          name: "Person B",
-          availability: [
-            "2025-03-09T16:00:00.000Z-9:00",
-            "2025-03-10T16:00:00.000Z-14:00",
-          ],
-        },
-      ],
+      name: eventData.name,
+      dateRange: eventData.dateRange,
+      timeRange: eventData.timeRange,
+      area: eventData.area,
+      responseDeadline: eventData.responseDeadline,
+      meetupLocations: [],
+      participants: [],
     };
+
+    // Save the new event to Firestore
+    const eventDoc = doc(db, "events", eventId);
+    await setDoc(eventDoc, newEvent);
+
+    return eventId;
+  }
+
+  async fetchEvent(eventId: string) {
+    const eventDoc = doc(db, "events", eventId);
+    const eventSnapshot = await getDoc(eventDoc);
+
+    if (eventSnapshot.exists()) {
+      this.event.value = eventSnapshot.data() as Event;
+    } else {
+      console.error("Event not found!");
+    }
   }
 
   async saveEvent(updatedEvent: Event) {
-    // Simulate saving event data to the backend
-    // Replace this with an actual API call
-    console.log("Saving event to backend:", updatedEvent);
-    this.event.value = updatedEvent;
+    const eventDoc = doc(db, "events", updatedEvent.id);
+    await setDoc(eventDoc, updatedEvent);
+    console.log("Event saved successfully!");
   }
 
   getEvent() {

@@ -6,8 +6,10 @@ import Slider from "primevue/slider";
 import Button from "primevue/button";
 import { useRouter } from "vue-router";
 import LocationSelector from "./LocationSelector.vue";
+import { EventController } from "../controllers/EventController";
 
 const router = useRouter();
+const controller = new EventController();
 
 const eventName = ref("");
 const dateRange = ref();
@@ -16,58 +18,61 @@ const selectedLocation = ref("");
 const responseDeadline = ref();
 const errorMessage = ref("");
 
-function handleSubmit() {
-  errorMessage.value = "";
-  console.log("Form submitted", {
-    eventName: eventName.value,
-    dateRange: dateRange.value,
-    timeRange: timeRange.value,
-    selectedLocation: selectedLocation.value,
-    responseDeadline: responseDeadline.value,
-  });
+async function handleSubmit() {
+  try {
+    errorMessage.value = "";
 
-  if (!eventName.value) {
-    eventName.value = "Untitled Event";
-  } else if (eventName.value.length > 50) {
-    eventName.value = eventName.value.substring(0, 50);
-    errorMessage.value = "Event name truncated to 50 characters.";
+    // Validation
+    if (!eventName.value) {
+      eventName.value = "Untitled Event";
+    } else if (eventName.value.length > 50) {
+      eventName.value = eventName.value.substring(0, 50);
+      errorMessage.value = "Event name truncated to 50 characters.";
+    }
+
+    if (!dateRange.value) {
+      errorMessage.value = "Please select a valid date range.";
+      return;
+    }
+
+    if (!timeRange.value) {
+      timeRange.value = [9, 17];
+      errorMessage.value = "Default time range applied.";
+    }
+
+    if (!selectedLocation.value) {
+      errorMessage.value = "Please select a location for the event.";
+      return;
+    }
+
+    if (!responseDeadline.value) {
+      errorMessage.value = "Please select a deadline.";
+      return;
+    }
+
+    // Create event using controller
+    const eventId = await controller.createEvent({
+      name: eventName.value,
+      dateRange: {
+        start: dateRange.value[0].toISOString(),
+        end: dateRange.value[1].toISOString(),
+      },
+      timeRange: {
+        start: timeRange.value[0],
+        end: timeRange.value[1],
+      },
+      area: selectedLocation.value,
+      responseDeadline: responseDeadline.value.toISOString(),
+    });
+
+    // Redirect to the event page
+    router.push(`/event/${eventId}`);
+  } catch (error) {
+    errorMessage.value = "Failed to create event. Please try again.";
+    console.error("Error creating event:", error);
   }
-
-  if (!dateRange.value) {
-    errorMessage.value = "Please select a valid date range.";
-    return;
-  }
-
-  if (!timeRange.value) {
-    timeRange.value = [9, 17];
-    errorMessage.value = "Default time range applied.";
-  }
-
-  if (!selectedLocation.value) {
-    errorMessage.value = "Please select a location for the event.";
-    return;
-  }
-
-  if (!responseDeadline.value) {
-    errorMessage.value = "Please select a deadline.";
-    return;
-  }
-
-  // Generate unique URL (mock implementation)
-  const uniqueUrl = generateUniqueUrl();
-  if (!uniqueUrl) {
-    errorMessage.value = "Failed to generate a unique URL. Please try again.";
-    return;
-  }
-
-  // Redirect to the unique event page
-  router.push(`/event/${uniqueUrl}`);
 }
 
-function generateUniqueUrl() {
-  // Mock implementation of unique URL generation
-  return Math.random().toString(36).substr(2, 9);
-}
 function formatTime(value: number) {
   const hour = Math.floor(value);
   const minute = value % 1 === 0.5 ? "30" : "00";
