@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import Listbox from "primevue/listbox";
+import type { Participant } from "../models/Participant";
+import type { TimeSlot } from "../models/TimeSlot";
 
 const props = defineProps({
   date: {
@@ -12,7 +14,7 @@ const props = defineProps({
     required: true,
   },
   participants: {
-    type: Array,
+    type: Array as () => Participant[],
     default: () => [],
   },
   currentUserSelections: {
@@ -29,24 +31,24 @@ const emit = defineEmits(["update:selected"]);
 
 const selectedTimes = ref([]);
 
-const timeSlots = computed(() => {
-  const slots = [];
+const timeSlots = computed<TimeSlot[]>(() => {
+  const slots: TimeSlot[] = [];
   for (let time = props.timeRange[0]; time <= props.timeRange[1]; time += 0.5) {
     const hour = Math.floor(time);
     const minute = time % 1 === 0.5 ? "30" : "00";
     const timeString = `${hour}:${minute}`;
     const slotId = `${props.date}-${timeString}`;
 
-    // Count participants who selected this slot
     const availableParticipants = props.participants.filter((p) =>
-      p.availableTimes.includes(slotId)
+      p.availability.includes(slotId)
     );
 
     slots.push({
+      id: slotId,
+      date: new Date(props.date),
       time: timeString,
-      slotId,
-      participants: availableParticipants,
-      label: `${timeString} (${availableParticipants.length})`,
+      isSelected: false,
+      participants: availableParticipants.map((p) => p.id),
     });
   }
   return slots;
@@ -57,14 +59,14 @@ watch(
   () => props.currentUserSelections,
   (newSelections) => {
     selectedTimes.value = timeSlots.value.filter((slot) =>
-      newSelections.has(slot.slotId)
+      newSelections.has(slot.id)
     );
   },
   { immediate: true }
 );
 
 const onSelectionChange = (event) => {
-  const selectedSlotIds = event.value.map((slot) => slot.slotId);
+  const selectedSlotIds = event.value.map((slot) => slot.id);
   emit("update:selected", selectedSlotIds);
 };
 </script>

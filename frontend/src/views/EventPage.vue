@@ -8,6 +8,8 @@ import LocationVoting from "../components/LocationVoting.vue";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import type { Location } from "../models/Location";
+import type { Participant } from "../models/Participant";
+import type { TimeSlot } from "../models/TimeSlot";
 
 // Mock data
 const eventData = {
@@ -51,25 +53,35 @@ const meetupLocations = ref<Location[]>([
   // Add more mock locations here
 ]);
 
+//map of a mock data of participant to password
+const participantsPassword = ref(
+  new Map([
+    ["Person A", "passwordA"],
+    ["Person B", "passwordB"],
+  ])
+);
+
 // Add mock participants data
-const participants = ref([
+const participants = ref<Participant[]>([
   {
+    id: "1",
     name: "Person A",
-    availableTimes: [
+    availability: [
       "2025-03-09T16:00:00.000Z-9:00",
       "2025-03-09T16:00:00.000Z-9:30",
     ],
   },
   {
+    id: "2",
     name: "Person B",
-    availableTimes: [
+    availability: [
       "2025-03-09T16:00:00.000Z-9:00",
       "2025-03-10T16:00:00.000Z-14:00",
     ],
   },
 ]);
 
-const currentUser = ref(null);
+const currentUser = ref<Participant | null>();
 const userName = ref("");
 const userPassword = ref("");
 
@@ -83,12 +95,16 @@ const dates = computed(() => {
   return dates;
 });
 
-function formatDate(dateString) {
-  const options = { year: "numeric", month: "long", day: "numeric" };
+function formatDate(dateString: string) {
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
   return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
-function formatTime(value) {
+function formatTime(value: number) {
   const hour = Math.floor(value);
   const minute = value % 1 === 0.5 ? "30" : "00";
   return `${hour}:${minute}`;
@@ -101,24 +117,23 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   }
 
   const userIndex = participants.value.findIndex(
-    (p) => p.name === currentUser.value.name
+    (p) => p.id === currentUser.value?.id
   );
 
   if (userIndex !== -1) {
     const datePrefix = date;
-    const existingSlots = new Set(participants.value[userIndex].availableTimes);
+    const existingSlots = new Set(participants.value[userIndex].availability);
 
     // Remove existing selections for this date
-    participants.value[userIndex].availableTimes = Array.from(
+    participants.value[userIndex].availability = Array.from(
       existingSlots
     ).filter((slot) => !slot.startsWith(datePrefix));
 
     // Add new selections
-    participants.value[userIndex].availableTimes.push(...selectedSlotIds);
+    participants.value[userIndex].availability.push(...selectedSlotIds);
 
-    // ✅ Update local selectedTimeSlots to reflect user choices
     selectedTimeSlots.value = new Set(
-      participants.value[userIndex].availableTimes
+      participants.value[userIndex].availability
     );
   }
 
@@ -136,29 +151,24 @@ function copyUrl() {
     });
 }
 
-function voteLocation(locationName: string) {
+function voteLocation(location: Location) {
   if (!currentUser.value) {
-    alert("Please log in to vote.");
+    alert("Please log in to vote for a location");
     return;
   }
 
-  const location = meetupLocations.value.find(
-    (loc) => loc.name === locationName
-  );
-  if (!location) return;
-
-  const userIndex = location.votedBy.indexOf(currentUser.value.name);
-
-  // Remove from all other locations first
+  // Remove user's vote from all locations
   meetupLocations.value.forEach((loc) => {
-    const idx = loc.votedBy.indexOf(currentUser.value.name);
-    if (idx !== -1) {
-      loc.votedBy.splice(idx, 1);
+    const index = currentUser.value
+      ? loc.votedBy.indexOf(currentUser.value.name)
+      : -1;
+    if (index !== -1) {
+      loc.votedBy.splice(index, 1);
     }
   });
 
-  // Add to selected location if it wasn't the one we removed from
-  if (userIndex === -1) {
+  // Add vote to selected location
+  if (location) {
     location.votedBy.push(currentUser.value.name);
   }
 }
@@ -166,24 +176,26 @@ function voteLocation(locationName: string) {
 function login() {
   if (userName.value.trim()) {
     currentUser.value = {
+      id: (participants.value.length + 1).toString(),
       name: userName.value,
-      password: userPassword.value,
+      availability: [],
     };
 
     // Add new participant
     participants.value.push({
+      id: currentUser.value.id,
       name: userName.value,
-      availableTimes: [],
+      availability: [],
     });
   }
 }
 
 const userLocationVote = computed(() => {
   if (!currentUser.value) return null;
-  const votedLocation = meetupLocations.value.find((loc) =>
-    loc.votedBy.includes(currentUser.value.name)
+  const votedLoc = meetupLocations.value.find(
+    (loc) => currentUser.value && loc.votedBy.includes(currentUser.value.name)
   );
-  return votedLocation?.name || null;
+  return votedLoc ? votedLoc.name : null;
 });
 </script>
 
@@ -193,7 +205,7 @@ const userLocationVote = computed(() => {
     <p>Location: {{ eventData.selectedLocation }}</p>
 
     <!-- Copy URL and User Info Section -->
-    <div class="mb-4 flex justify-between items-center">
+    <div class="mb-4 mt-4 flex justify-between items-center">
       <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
       <div v-if="currentUser" class="flex items-center gap-2">
         <span>Welcome, {{ currentUser.name }}</span>
@@ -247,7 +259,8 @@ const userLocationVote = computed(() => {
           <LocationVoting
             :locations="meetupLocations"
             :disabled="!currentUser"
-            v-on:update:model-value="voteLocation"
+            :userVote="userLocationVote || ''"
+            @update:voteLocation="voteLocation"
           />
         </div>
       </TabPanel>

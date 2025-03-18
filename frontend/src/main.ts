@@ -25,4 +25,5 @@ app.component('InputText', InputText);
 // app.component('Calendar', Calendar);
 // app.component('Slider', Slider);
 
+
 app.mount('#app');

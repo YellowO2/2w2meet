@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineProps, defineEmits } from "vue";
-import Listbox from "primevue/listbox";
 import type { Location } from "../models/Location";
 
 const props = defineProps({
@@ -8,55 +6,62 @@ const props = defineProps({
     type: Array as () => Location[],
     required: true,
   },
-  modelValue: String,
-  disabled: Boolean,
+  disabled: {
+    type: Boolean,
+    required: true,
+  },
+  userVote: {
+    type: String,
+    required: true,
+  },
 });
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:voteLocation"]);
+
+function handleLocationClick(location: Location) {
+  if (!props.disabled) {
+    emit("update:voteLocation", location);
+  }
+}
 </script>
 
 <template>
-  <Listbox
-    :modelValue="modelValue"
-    :options="locations"
-    optionLabel="name"
-    :disabled="disabled"
-    class="w-full"
-    @change="(e) => emit('update:modelValue', e.value.name)"
-  >
-    <template #option="{ option }">
-      <div class="flex justify-between items-center p-3">
-        <div class="font-bold">{{ option.name }}</div>
+  <div class="location-voting grid gap-4">
+    <div
+      v-for="location in locations"
+      :key="location.name"
+      class="location-card p-4 border rounded-lg cursor-pointer transition-colors"
+      :class="{
+        'bg-blue-50 border-blue-500': userVote === location.name,
+        'hover:bg-gray-50': !disabled,
+        'opacity-75 cursor-not-allowed': disabled,
+      }"
+      @click="handleLocationClick(location)"
+    >
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-lg">{{ location.name }}</h3>
+          <p class="text-sm text-gray-600">
+            {{ location.distance }} • {{ location.rating }} •
+            {{ location.category }}
+          </p>
+        </div>
         <div class="flex items-center gap-2">
           <span class="bg-gray-100 px-2 py-1 rounded">
-            {{ option.votedBy.length }} votes
+            {{ location.votedBy.length }} votes
           </span>
+          <i
+            v-if="userVote === location.name"
+            class="pi pi-check-circle text-blue-500"
+          ></i>
         </div>
       </div>
-    </template>
-  </Listbox>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* :deep(.p-listbox) {
-  border: none;
-  background: transparent;
-} */
-
-/* :deep(.p-listbox-item) {
-  margin: 0.5rem 0;
-  border: 1px solid var(--surface-200);
-  border-radius: 0.5rem;
-  background: white;
-} */
-/* 
-:deep(.p-listbox-item.p-highlight) {
-  background: var(--primary-50);
-  border-color: var(--primary-500);
-  color: var(--text-color);
-} */
-
-/* :deep(.p-listbox-list) {
-  padding: 0.5rem;
-} */
+.location-card {
+  background-color: white;
+}
 </style>

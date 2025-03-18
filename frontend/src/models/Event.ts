@@ -1,3 +1,6 @@
+import type { Participant } from "./Participant";
+import type { TimeSlot } from "./TimeSlot";
+
 export interface Event {
     id: string;
     name: string;
@@ -11,4 +14,6 @@ export interface Event {
     };
     venue?: Location;
     responseDeadline: Date;
+    participants?: Participant[];
+    timeSlots?: TimeSlot[];
 }
