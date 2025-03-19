@@ -1,7 +1,3 @@
-# 2w2meet: Meeting Scheduling with Time and Place Considerations
-
-A scheduling tool similar to When2Meet, but also helps decide **where** to meet by considering weather and food options.
-
 ## Getting Started
 
 1. **Clone the repository**  
@@ -14,15 +10,18 @@ A scheduling tool similar to When2Meet, but also helps decide **where** to meet 
     cd 2w2meet
     ```
 
-3. **Install dependencies**  
+3. **Create a `.env` file**  
+    In the root directory, create a `.env` file and populate it with the environment variables I shared.
+
+4. **Install dependencies**  
     ```bash
     npm install
     ```
 
-4. **Start the development server**  
+5. **Start the development server**  
     ```bash
     npm run dev
     ```
 
-5. **Access the application**  
+6. **Access the application**  
     Open your browser and navigate to `http://localhost:5173` to view the application.
