@@ -10,7 +10,7 @@ import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import { EventController } from "../controllers/EventController";
 import type { Event } from "../models/Event";
-import type { Location } from "../models/Location";
+import type { Establishment } from "../models/Location";
 import type { Participant } from "../models/Participant";
 
 // Initialize controller and route
@@ -20,7 +20,7 @@ const controller = new EventController();
 // Local states
 const event = ref<Event | null>(null);
 const selectedTimeSlots = ref(new Set<string>());
-const meetupLocations = ref<Location[]>([]);
+const meetupLocations = ref<Establishment[]>([]);
 const currentUser = ref<Participant | null>();
 const userName = ref("");
 const hasUnsavedChanges = ref(false);
@@ -119,7 +119,7 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   checkForChanges();
 }
 
-function voteLocation(location: Location) {
+function voteLocation(location: Establishment) {
   if (!currentUser.value) {
     alert("Please log in to vote for a location");
     return;
@@ -166,18 +166,12 @@ function logout() {
 <template>
   <div class="p-4">
     <h1>{{ event?.name }}</h1>
-    <p>Location: {{ event?.area }}</p>
+    <p>Location: {{ event?.area.name }}</p>
 
     <!-- Copy URL and User Info Section -->
     <div class="mb-4 mt-4 flex justify-between items-center">
-      <Button
-        v-if="hasUnsavedChanges"
-        class="fixed shadow-lg"
-        label="Save Changes"
-        icon="pi pi-save"
-        @click="saveEvent"
-        severity="warning"
-      />
+      <Button v-if="hasUnsavedChanges" class="fixed shadow-lg" label="Save Changes" icon="pi pi-save" @click="saveEvent"
+        severity="warning" />
       <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
       <div v-if="currentUser" class="flex items-center gap-2">
         <span>Welcome, {{ currentUser.name }}</span>
@@ -206,16 +200,10 @@ function logout() {
           <h2>Availability</h2>
           <div class="overflow-x-auto">
             <div class="flex gap-4">
-              <TimeSlotSelector
-                v-for="date in dates"
-                :key="date"
-                :date="date"
-                :time-range="[event?.timeRange.start, event?.timeRange.end]"
-                :participants="event?.participants"
-                :current-user-selections="selectedTimeSlots"
-                :disabled="!currentUser"
-                @update:selected="(slots) => toggleTimeSlots(date, slots)"
-              />
+              <TimeSlotSelector v-for="date in dates" :key="date" :date="date"
+                :time-range="[event?.timeRange.start, event?.timeRange.end]" :participants="event?.participants"
+                :current-user-selections="selectedTimeSlots" :disabled="!currentUser"
+                @update:selected="(slots) => toggleTimeSlots(date, slots)" />
             </div>
           </div>
         </div>
@@ -224,20 +212,14 @@ function logout() {
       <TabPanel header="Where" value="1">
         <div class="mb-4">
           <h2>Location Voting</h2>
-          <LocationVoting
-            :locations="meetupLocations"
-            :disabled="!currentUser"
-            :user-vote="
-              currentUser
-                ? meetupLocations.find(
-                    (loc) =>
-                      currentUser?.name &&
-                      loc.votedBy.includes(currentUser.name)
-                  )?.name || ''
-                : ''
-            "
-            @update:voteLocation="voteLocation"
-          />
+          <LocationVoting :locations="meetupLocations" :disabled="!currentUser" :user-vote="currentUser
+            ? meetupLocations.find(
+              (loc) =>
+                currentUser?.name &&
+                loc.votedBy.includes(currentUser.name)
+            )?.name || ''
+            : ''
+            " @update:voteLocation="voteLocation" />
         </div>
       </TabPanel>
     </TabView>

@@ -14,7 +14,7 @@ const controller = new EventController();
 const eventName = ref("");
 const dateRange = ref();
 const timeRange = ref([9, 17]);
-const selectedLocation = ref("");
+const selectedLocation = ref();
 const responseDeadline = ref();
 const errorMessage = ref("");
 
@@ -22,7 +22,6 @@ async function handleSubmit() {
   try {
     errorMessage.value = "";
 
-    // Validation
     if (!eventName.value) {
       eventName.value = "Untitled Event";
     } else if (eventName.value.length > 50) {
@@ -94,14 +93,7 @@ function formatTime(value: number) {
 
     <div class="field mt-4">
       <label>Time Range</label>
-      <Slider
-        v-model="timeRange"
-        :min="0"
-        :max="24"
-        :step="0.5"
-        range
-        class="w-full"
-      />
+      <Slider v-model="timeRange" :min="0" :max="24" :step="0.5" range class="w-full" />
       <div class="mt-2 text-center text-gray-600">
         Selected Time: {{ formatTime(timeRange[0]) }} -
         {{ formatTime(timeRange[1]) }}
@@ -119,10 +111,7 @@ function formatTime(value: number) {
     </div>
 
     <div v-if="errorMessage" class="field mt-4">
-      <div
-        class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
-        role="alert"
-      >
+      <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
         <span class="font-medium">{{ errorMessage }}</span>
       </div>
     </div>

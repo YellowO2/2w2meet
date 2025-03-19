@@ -1,19 +1,15 @@
 <template>
   <div>
-    <input
-      id="autocomplete"
-      type="text"
-      placeholder="Enter a location"
-      class="w-full p-2 border rounded"
-    />
+    <input id="autocomplete" type="text" placeholder="Enter a location" class="w-full p-2 border rounded" />
     <div id="map" class="w-full h-64 mt-2"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from "vue";
+import type { Location } from "../models/Location";
 
-const locationModel = defineModel(); // This will bind to v-model in parent
+const locationModel = defineModel<Location>(); // This will bind to v-model in parent
 
 let map: google.maps.Map;
 let autocomplete: google.maps.places.Autocomplete;
@@ -23,8 +19,8 @@ onMounted(() => {
   const mapElement = document.getElementById("map") as HTMLElement;
 
   map = new google.maps.Map(mapElement, {
-    center: { lat: -34.397, lng: 150.644 },
-    zoom: 8,
+    center: { lat: 1.303323, lng: 103.644022 },
+    zoom: 15,
   });
 
   autocomplete = new google.maps.places.Autocomplete(input, {
@@ -46,7 +42,15 @@ onMounted(() => {
     });
 
     // Emit the selected location as a formatted address (or place.name)
-    locationModel.value = place.formatted_address || place.name || "";
+    // locationModel.value = place.formatted_address || place.name || "";
+    /* or */
+    // The literal fucking coordinates 
+    locationModel.value = {
+      name: place.name || "",
+      lng: place.geometry.location.lng(),
+      lat: place.geometry.location.lat()
+    }
+
   });
 });
 </script>
