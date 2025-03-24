@@ -28,6 +28,7 @@ export class EventController {
 			responseDeadline: eventData.responseDeadline,
 			meetupLocations: await getMeetupLocations(eventData.area),
 			participants: [],
+			notified: false,
 		};
 
 		console.log(newEvent.meetupLocations);
@@ -96,6 +97,8 @@ function getMeetupLocations(nearby: Location): Promise<Establishment[]> {
 								link: "",
 							}))
 							.sort((p, q) => p.distance - q.distance)
+							// TODO: Index 0 could be the chosen venue. Should not appear
+							// as results. Needed to remove when appropriate.
 							.slice(0, 4) || [];
 
 					resolve(places);
@@ -110,7 +113,7 @@ function getMeetupLocations(nearby: Location): Promise<Establishment[]> {
 }
 
 /**
- * Calculates the shortest point-to-point distance on a spherical surface.
+ * Calculates the shortest point-to-point distance, in meters, on a spherical surface.
  * @param lat1
  * @param lon1
  * @param lat2

@@ -23,8 +23,10 @@ const selectedTimeSlots = ref(new Set<string>());
 const meetupLocations = ref<Establishment[]>([]);
 const currentUser = ref<Participant | null>();
 const userName = ref("");
+const emailAddress = ref("");
 const hasUnsavedChanges = ref(false);
 const originalEventState = ref<Event | null>(null);
+const errorMessage = ref("");
 
 // Fetch event data on mount
 onMounted(async () => {
@@ -71,6 +73,9 @@ const dates = computed(() => {
 function login() {
   if (userName.value.trim()) {
     currentUser.value = {
+      // TODO: Fix id generation
+      // logical OR ('||') has lower precedence than addition ('+'),
+      // without the parentheses 0 would bind to 1 instead of length.
       id: (event.value?.participants.length || 0 + 1).toString(),
       name: userName.value,
       availability: [],
@@ -93,9 +98,7 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
     return;
   }
 
-  const userIndex = event.value?.participants.findIndex(
-    (p) => p.id === currentUser.value?.id
-  );
+  const userIndex = findUser();
 
   if (userIndex !== undefined && userIndex !== -1) {
     const datePrefix = date;
@@ -117,6 +120,17 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   }
 
   checkForChanges();
+}
+
+/**
+ * I am half as wise as the previous author. This function simply
+ * returns the index of the current user in the Event's participant
+ * list.
+ */
+function findUser() {
+  return event.value?.participants.findIndex(
+    (p) => p.id === currentUser.value?.id
+  );
 }
 
 function voteLocation(location: Establishment) {
@@ -150,6 +164,22 @@ function copyUrl() {
     .catch(() => {
       alert("Failed to copy URL. Please try again.");
     });
+}
+
+function submitEmail() {
+  errorMessage.value = "";
+
+  if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailAddress.value)) {
+    errorMessage.value = "Please enter a valid email address.";
+    return;
+  }
+
+  const userIndex = findUser();
+  if (userIndex === undefined) return;
+
+  event.value!.participants[userIndex].email = emailAddress.value;
+
+  saveEvent();
 }
 
 function logout() {
@@ -209,7 +239,7 @@ function logout() {
         </div>
       </TabPanel>
 
-      <TabPanel header="Where" value="1">
+      <TabPanel v-if="meetupLocations.length > 0" header="Where" value="1">
         <div class="mb-4">
           <h2>Location Voting</h2>
           <LocationVoting :locations="meetupLocations" :disabled="!currentUser" :user-vote="currentUser
@@ -222,7 +252,29 @@ function logout() {
             " @update:voteLocation="voteLocation" />
         </div>
       </TabPanel>
+      <TabPanel v-else header="Where" value="1">
+        <div class="mb-4">
+          <h2>Location Voting</h2>
+          <h3>No nearby locations found.</h3>
+        </div>
+      </TabPanel>
+
     </TabView>
+
+    <!-- Inline Notification Opt-in Section -->
+    <div v-if="currentUser && !currentUser.email" class="mb-6 p-4 border rounded-lg bg-gray-50">
+      <h2 class="font-semibold mb-2">Opt-in for Event Notification</h2>
+      <div class="flex flex-col gap-3">
+        <InputText v-model="emailAddress" placeholder="Enter your email" />
+        <Button label="Notify me when finalised" @click="submitEmail" />
+      </div>
+    </div>
+
+    <div v-if="errorMessage" class="field mt-4">
+      <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+        <span class="font-medium">{{ errorMessage }}</span>
+      </div>
+    </div>
 
     <Footer />
   </div>

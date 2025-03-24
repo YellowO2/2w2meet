@@ -17,5 +17,6 @@ export interface Event {
 	meetupLocations: Establishment[]; //idk who thought 'location' was a good name instead of venue but i went with it
 	responseDeadline: string;
 	participants: Participant[];
+	notified: boolean;
 	timeSlots?: TimeSlot[];
 }
