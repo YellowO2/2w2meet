@@ -11,6 +11,7 @@ import { query, where, getDocs, collection, getFirestore } from "firebase/firest
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase/app";
+import { sendNotificationEmail } from "./nodemailerInit.js";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -38,4 +39,9 @@ export const findExpiredEvents = onRequest(async (_, response) => {
 	const querySnapshot = await getDocs(q);
 
 	response.send(querySnapshot.docs.map((doc) => doc.data()));
+});
+
+export const triggerNotification = onRequest(async (request, response) => {
+	console.log(JSON.parse(request.body));
+	response.send(await sendNotificationEmail(JSON.parse(request.body)));
 });

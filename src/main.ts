@@ -29,4 +29,4 @@ app.component("InputText", InputText);
 app.mount("#app");
 
 // Start scanning database
-setInterval(localSchedule, 5000);
+setInterval(localSchedule, 60000);
