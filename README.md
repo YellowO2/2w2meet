@@ -78,27 +78,30 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
 6. **Access the application**  
    Open your browser and navigate to `http://localhost:5173`
 
-## Running the Firebase Emulator
+## Starting the Backend Services
 
-1. Navigate to the functions directory:
-    ```bash
-    cd ./functions
-    ```
+7. **Navigate to `./backend`**
+  ```bash
+  cd ./backend
+  ```
 
-2. Install dependencies and set up environment:
-    ```bash
-    npm install
-    ```
+8. **Install Dependencies**
+  ```bash
+  npm install
+  ```
 
-3. Log in to Firebase:
-    ```bash
-    firebase login
-    ```
+9. **Create and Populate `.env` File**
+In `./backend`, create a file named ".env". Populate it with fields as follows
+  ```
+    FIREBASE_API_KEY=...
+    GOOGLE_MAPS_API_KEY=...
+    SERVICE_EMAIL_PASS=...
+  ```
 
-4. Start the emulator:
-    ```bash
-    firebase emulators:start --only functions
-    ```
+10. Run the Program
+  ```bash
+  npm run dev
+  ```
 
 ## Skills Demonstrated
 
