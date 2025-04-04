@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"declaration": false,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowSyntheticDefaultImports": true,
+		"lib": ["es6", "dom"],
+		"mapRoot": "./",
+		"module": "ES6",
+		"moduleResolution": "node",
+		"outDir": "./dist",
+		"sourceMap": true,
+		"target": "es5",
+		"typeRoots": ["../node_modules/@types"]
+	},
+	"include": ["src/**/*", "../shared/*"],
+	"exclude": ["node_modules"]
+}
