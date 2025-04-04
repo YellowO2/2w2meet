@@ -90,7 +90,7 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
   npm install
   ```
 
-9. **Create and Populate `.env` File** //
+9. **Create and Populate `.env` File**  
 In `./backend`, create a file named ".env". Populate it with fields as follows
   ```
     FIREBASE_API_KEY=...
