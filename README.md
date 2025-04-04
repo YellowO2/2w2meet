@@ -49,21 +49,21 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
     ```bash
     git clone https://github.com/YellowO2/2w2meet.git
     ```
-
-2. **Navigate to the project directory**
+## Starting the Frontend  
+2. **Navigate to the frontend directory**
 
     ```bash
-    cd 2w2meet
+    cd ./frontend
     ```
 
 3. **Create a `.env` file**  
-   In the root directory, create a `.env` file with the following variables:
+   In `./frontend`, create a `.env` file with the following variables:
    ```
    VITE_FIREBASE_API_KEY=your_api_key
    SERVICE_EMAIL_PASS=your_email_service_password
    ```
 
-4. **Install dependencies**
+4. **Install frontend dependencies**
 
     ```bash
     npm install
@@ -82,7 +82,7 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
 
 7. **Navigate to `./backend`**
   ```bash
-  cd ./backend
+  cd ../backend
   ```
 
 8. **Install Dependencies**
