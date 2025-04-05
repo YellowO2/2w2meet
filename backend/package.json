@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/server.ts",
   "scripts": {
-    "dev": "echo fuck nodemon && npx tsx ./src/server.ts",
+    "start": "npx tsx ./src/server.ts",
+    "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -28,6 +29,7 @@
     "@googlemaps/google-maps-services-js": "^3.4.1",
     "@types/firebase": "^3.2.3",
     "@types/nodemailer": "^6.4.17",
+    "body-parser": "^2.2.0",
     "firebase": "^11.4.0",
     "nodemailer": "^6.10.0"
   }

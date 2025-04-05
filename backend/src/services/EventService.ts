@@ -6,6 +6,12 @@ import { LatLng } from "@googlemaps/google-maps-services-js";
 import { Establishment } from "../../../shared/Location";
 
 export class EventService {
+	/**
+	 * Completes and posts the event information as retrieved from the client-end form.
+	 * @param eventFormData client-end form, where `id` and `meetupLocations` are not yet
+	 * populated
+	 * @returns the assigned ID of the newly created event.
+	 */
 	static async createEvent(eventFormData: Partial<Event>): Promise<string> {
 		// Generate a unique ID for the new event
 		const eventId = Math.random().toString(36).substr(2, 6);

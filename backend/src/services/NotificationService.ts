@@ -8,9 +8,7 @@ export class NotificationService {
 	 */
 	static trigger(): void {
 		setInterval(async () => {
-			console.debug(`[${new Date().toISOString()}] System idle, scanning database for expired events.`);
 			await this.notifyParticipants();
-			console.debug(`[${new Date().toISOString()}]	Done`);
 		}, 5000);
 	}
 
@@ -21,7 +19,6 @@ export class NotificationService {
 	 */
 	static async notifyParticipants(): Promise<void> {
 		const expiredEvents = await EventService.getExpiredEvent();
-		console.debug(`[${new Date().toISOString()}]	found ${expiredEvents.length} expired events.`);
 		if (!expiredEvents) return;
 
 		expiredEvents.forEach((e) => {
@@ -40,8 +37,6 @@ export class NotificationService {
 			// update flag to avoid repeated trigger
 			e.notified = true;
 			EventRepository.updateEvent(e.id, e);
-			console.log("");
-			console.debug(`[${new Date().toISOString()}]	done notifying participants of ${e.id} and ${e.notified}`);
 		});
 	}
 }
