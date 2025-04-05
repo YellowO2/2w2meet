@@ -49,21 +49,21 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
     ```bash
     git clone https://github.com/YellowO2/2w2meet.git
     ```
-
-2. **Navigate to the project directory**
+## Starting the Frontend  
+2. **Navigate to the frontend directory**
 
     ```bash
-    cd 2w2meet
+    cd ./frontend
     ```
 
 3. **Create a `.env` file**  
-   In the root directory, create a `.env` file with the following variables:
+   In `./frontend`, create a `.env` file with the following variables:
    ```
    VITE_FIREBASE_API_KEY=your_api_key
    SERVICE_EMAIL_PASS=your_email_service_password
    ```
 
-4. **Install dependencies**
+4. **Install frontend dependencies**
 
     ```bash
     npm install
@@ -78,27 +78,30 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
 6. **Access the application**  
    Open your browser and navigate to `http://localhost:5173`
 
-## Running the Firebase Emulator
+## Starting the Backend Services
 
-1. Navigate to the functions directory:
-    ```bash
-    cd ./functions
-    ```
+7. **Navigate to `./backend`**
+  ```bash
+  cd ../backend
+  ```
 
-2. Install dependencies and set up environment:
-    ```bash
-    npm install
-    ```
+8. **Install Dependencies**
+  ```bash
+  npm install
+  ```
 
-3. Log in to Firebase:
-    ```bash
-    firebase login
-    ```
+9. **Create and Populate `.env` File**  
+In `./backend`, create a file named ".env". Populate it with fields as follows
+  ```
+    FIREBASE_API_KEY=...
+    GOOGLE_MAPS_API_KEY=...
+    SERVICE_EMAIL_PASS=...
+  ```
 
-4. Start the emulator:
-    ```bash
-    firebase emulators:start --only functions
-    ```
+10. Run the Program
+  ```bash
+  npm run dev
+  ```
 
 ## Skills Demonstrated
 
