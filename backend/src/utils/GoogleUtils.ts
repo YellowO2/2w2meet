@@ -41,7 +41,7 @@ export const searchPlaces = async (location: LatLng, radius: number, ...types: s
 	try {
 		let responseData: Map<string, Partial<PlaceData>> = new Map();
 
-		types.forEach(async (t) => {
+		for (const t of types) {
 			const response = await googleMapsClient.placesNearby({
 				params: {
 					location: location,
@@ -55,7 +55,7 @@ export const searchPlaces = async (location: LatLng, radius: number, ...types: s
 				// Perform iterative set union on results
 				responseData.set(p.place_id, p);
 			});
-		});
+		}
 
 		return await Promise.all(Array.from(responseData.values()).map(placesResultMapper(location)));
 	} catch (error) {
