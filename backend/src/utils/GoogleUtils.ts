@@ -23,7 +23,7 @@ const placesResultMapper = (location: LatLng) => {
 			rating: place.rating,
 			category: place.types,
 			votedBy: [],
-			link: "",
+			link: `http://maps.google.com/?ll=${place.geometry.location.lat},${place.geometry.location.lng}`,
 		}) as Establishment;
 };
 

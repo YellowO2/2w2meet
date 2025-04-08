@@ -26,6 +26,7 @@ export class EventRepository {
 	 */
 	static async updateEvent(eventId: string, newEventData: Event): Promise<Event | null> {
 		const eventDoc = doc(eventCollection, eventId);
+
 		await setDoc(eventDoc, newEventData, { merge: true });
 		return (await getDoc(eventDoc)).data() as Event;
 	}

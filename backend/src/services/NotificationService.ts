@@ -22,13 +22,17 @@ export class NotificationService {
 		if (!expiredEvents) return;
 
 		expiredEvents.forEach((e) => {
+			const eventDetails = EventService.finaliseEvent(e);
+
 			e.participants.forEach(async (p) => {
 				if (!p.email) return;
 
+				console.log(`[${new Date().toISOString()}] Event ${e.id} Finalised`);
+
 				const response = await sendNotificationEmail({
 					to: p.email,
-					subject: `${e.name} Details Finalised`,
-					text: `placeholder time; placeholder placeholder; ${e.area.name}`,
+					subject: `[Finalised] ${e.name}(${e.id}) Details`,
+					text: `Date: ${eventDetails.startTime.date}\nTime: ${eventDetails.startTime.time}\nMeet at: ${eventDetails.meetupLocation ? eventDetails.meetupLocation.location.name : e.area.name}\nPax: ${eventDetails.pax}\nNot sure how to get there? Use Google Maps:\n${eventDetails.meetupLocationLink}`,
 				});
 
 				console.log(response);
