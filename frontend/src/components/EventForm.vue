@@ -33,7 +33,7 @@ async function handleSubmit() {
       errorMessage.value = "Event name cannot be empty.";
       return;
     } else if (eventName.value.length > 50) {
-      errorMessage.value = "Event name must be below 50 characters.";
+      errorMessage.value = "Event name must be <= 50 characters.";
       return;
     }
 
@@ -53,6 +53,13 @@ async function handleSubmit() {
     // Check if dates are in the future
     if (dateRange.value[0] < now) {
       errorMessage.value = "Date Range: Event dates must be in the future.";
+      return;
+    }
+
+    // Check if date range is not more than a year
+    const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
+    if (dateRange.value[1] - dateRange.value[0] > oneYearInMs) {
+      errorMessage.value = "Date Range: Event duration cannot exceed one year.";
       return;
     }
 
