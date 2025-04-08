@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useAuth } from "../services/AuthService";
 import { useRouter } from "vue-router";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import type { Event } from "../../../shared/Event";
 import Footer from "../components/Footer.vue";
@@ -18,27 +25,84 @@ const { currentUser, loading } = useAuth();
 
 const userEvents = ref<Event[]>([]);
 const loadingEvents = ref(true);
+const errorFetchingEvents = ref(false);
+const errorMessage = ref("");
 
-onMounted(async () => {
-  if (!loading.value && !currentUser.value) {
-    // Redirect to login if not authenticated
-    router.push("/");
+async function loadUserEvents() {
+  if (!currentUser.value) {
+    loadingEvents.value = false;
     return;
   }
 
-  // Load user's events
-  if (currentUser.value && currentUser.value.events.length > 0) {
-    try {
-      const eventsRef = collection(db, "events");
-      const q = query(eventsRef, where("id", "in", currentUser.value.events));
-      const eventSnapshot = await getDocs(q);
-      userEvents.value = eventSnapshot.docs.map((doc) => doc.data() as Event);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
-  }
+  try {
+    loadingEvents.value = true;
+    console.log(
+      `Fetching events for user ${currentUser.value.displayName}:`,
+      currentUser.value.events
+    );
 
-  loadingEvents.value = false;
+    if (!currentUser.value.events || currentUser.value.events.length === 0) {
+      console.log("No events found for user");
+      loadingEvents.value = false;
+      return;
+    }
+
+    const eventsRef = collection(db, "events");
+    const fetchedEvents: Event[] = [];
+
+    for (const eventId of currentUser.value.events) {
+      try {
+        console.log(`Fetching event with ID: ${eventId}`);
+        const eventDoc = await getDoc(doc(eventsRef, eventId));
+
+        if (eventDoc.exists()) {
+          console.log(`Found event: ${eventDoc.id}`);
+          const eventData = eventDoc.data() as Event;
+          fetchedEvents.push({
+            ...eventData,
+            id: eventDoc.id, // Ensure ID is explicitly set or overwritten
+          });
+        } else {
+          console.log(`Event document ${eventId} does not exist`);
+        }
+      } catch (err) {
+        console.error(`Error fetching event ${eventId}:`, err);
+      }
+    }
+
+    userEvents.value = fetchedEvents;
+    console.log(`Loaded ${fetchedEvents.length} events for user`);
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    errorFetchingEvents.value = true;
+    errorMessage.value =
+      error instanceof Error ? error.message : "Unknown error occurred";
+  } finally {
+    loadingEvents.value = false;
+  }
+}
+
+onMounted(async () => {
+  if (!loading.value) {
+    if (!currentUser.value) {
+      router.push("/");
+      return;
+    }
+    await loadUserEvents();
+  }
+});
+
+// Add a watcher for both loading and currentUser to handle authentication state changes
+watch([loading, currentUser], async ([newLoading, newUser], [oldLoading]) => {
+  // Only trigger when loading completes (changes from true to false)
+  if (oldLoading === true && newLoading === false) {
+    if (!newUser) {
+      router.push("/");
+      return;
+    }
+    console.log("Auth state loaded, fetching events");
+    await loadUserEvents();
+  }
 });
 
 const formatDate = (dateString: string) => {
@@ -47,6 +111,13 @@ const formatDate = (dateString: string) => {
 
 const navigateToEvent = (event: Event) => {
   router.push(`/event/${event.id}`);
+};
+
+const getUserRole = (event: Event) => {
+  if (event.creatorId === currentUser.value?.id) {
+    return "Creator";
+  }
+  return "Participant";
 };
 </script>
 
@@ -99,6 +170,17 @@ const navigateToEvent = (event: Event) => {
         </div>
 
         <div
+          v-else-if="errorFetchingEvents"
+          class="p-4 text-center border rounded-md"
+        >
+          <p class="text-red-500">
+            There was an error loading your events:
+            {{ errorMessage || "Please try again" }}
+          </p>
+          <Button label="Retry" class="mt-3" @click="loadUserEvents" />
+        </div>
+
+        <div
           v-else-if="userEvents.length === 0"
           class="p-4 text-center border rounded-md"
         >
@@ -126,7 +208,18 @@ const navigateToEvent = (event: Event) => {
           </Column>
           <Column header="Location">
             <template #body="slotProps">
-              {{ slotProps.data.area.name }}
+              {{ slotProps.data.area?.name || "Location not specified" }}
+            </template>
+          </Column>
+          <Column header="Role">
+            <template #body="slotProps">
+              <span
+                :class="{
+                  'text-blue-600': getUserRole(slotProps.data) === 'Creator',
+                }"
+              >
+                {{ getUserRole(slotProps.data) }}
+              </span>
             </template>
           </Column>
           <Column header="Actions">

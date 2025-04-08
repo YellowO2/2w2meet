@@ -20,5 +20,6 @@ export interface Event {
   notified: boolean;
   timeSlots?: TimeSlot[];
   createdBy?: string | null; // User ID who created the event
+  creatorId?: string; // User ID of the creator
   isPublic?: boolean; // Whether non-registered users can participate
 }

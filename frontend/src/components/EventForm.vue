@@ -9,6 +9,8 @@ import { useRouter } from "vue-router";
 import LocationSelector from "./LocationSelector.vue";
 import { EventController } from "../controllers/EventController";
 import { useAuth } from "../services/AuthService";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../firebase";
 
 const router = useRouter();
 const controller = new EventController();
@@ -88,8 +90,14 @@ async function handleSubmit() {
       return;
     }
 
-    // Create event using controller
-    const eventId = await controller.createEvent({
+    // Check if user is logged in
+    if (!currentUser.value) {
+      errorMessage.value = "You must be logged in to create an event.";
+      return;
+    }
+
+    // Create event object with creator information
+    const eventData = {
       name: eventName.value,
       dateRange: {
         start: dateRange.value[0].toISOString(),
@@ -101,13 +109,29 @@ async function handleSubmit() {
       },
       area: selectedLocation.value,
       responseDeadline: responseDeadline.value.toISOString(),
-      createdBy: currentUser.value?.id || null,
+      creatorId: currentUser.value.id, // Match the ID field from User type
+      createdBy: currentUser.value.displayName || currentUser.value.email,
+      participants: [], // Initialize with empty array to match Participant[] type
+      meetupLocations: [], // Initialize with empty array to match type
+      notified: false, // Required by Event type
       isPublic: publicEvent.value,
-    });
+    };
 
-    // If user is logged in, add event to their profile
-    if (currentUser.value) {
-      await addEventToUser(eventId);
+    // Create event using controller
+    const eventId = await controller.createEvent(eventData);
+
+    // Add event to user's events in Firestore
+    try {
+      const userRef = doc(db, "users", currentUser.value.id); // Use id instead of uid
+      await updateDoc(userRef, {
+        events: arrayUnion(eventId),
+        createdEvents: arrayUnion(eventId),
+      });
+
+      console.log(`Added event ${eventId} to user ${currentUser.value.id}`);
+    } catch (error) {
+      console.error("Error updating user's events:", error);
+      // Continue even if this fails, as the event was created successfully
     }
 
     // Redirect to the event page

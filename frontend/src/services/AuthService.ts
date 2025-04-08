@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import type { User } from "../../../shared/User";
 
@@ -20,29 +20,40 @@ const loading = ref(true);
 // Initialize the auth state listener
 onAuthStateChanged(auth, async (firebaseUser) => {
   loading.value = true;
+  console.log("Auth state changed:", firebaseUser?.uid);
 
   if (firebaseUser) {
     // User is signed in
-    const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+    try {
+      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
 
-    if (userDoc.exists()) {
-      // Get user data from Firestore
-      currentUser.value = userDoc.data() as User;
-    } else {
-      // Create new user in Firestore
-      const newUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email || "",
-        displayName:
-          firebaseUser.displayName ||
-          firebaseUser.email?.split("@")[0] ||
-          "User",
-        photoURL: firebaseUser.photoURL || "",
-        events: [],
-      };
+      if (userDoc.exists()) {
+        // Get user data from Firestore
+        console.log("User doc exists:", userDoc.data());
+        currentUser.value = userDoc.data() as User;
 
-      await setDoc(doc(db, "users", firebaseUser.uid), newUser);
-      currentUser.value = newUser;
+        // Ensure events array exists
+        if (!currentUser.value.events) {
+          currentUser.value.events = [];
+        }
+      } else {
+        // Create new user in Firestore
+        const newUser: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          displayName:
+            firebaseUser.displayName ||
+            firebaseUser.email?.split("@")[0] ||
+            "User",
+          photoURL: firebaseUser.photoURL || "",
+          events: [],
+        };
+
+        await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+        currentUser.value = newUser;
+      }
+    } catch (error) {
+      console.error("Error setting up user data:", error);
     }
   } else {
     // User is signed out
@@ -158,16 +169,27 @@ export const useAuth = () => {
     if (!currentUser.value) return { error: "No user logged in" };
 
     try {
-      // Update local state
-      if (!currentUser.value.events.includes(eventId)) {
-        currentUser.value.events.push(eventId);
+      // Check if the event is already in the user's events
+      if (!currentUser.value.events) {
+        currentUser.value.events = [];
       }
 
-      // Update Firestore
-      await setDoc(doc(db, "users", currentUser.value.id), currentUser.value);
+      if (!currentUser.value.events.includes(eventId)) {
+        // Update local state
+        currentUser.value.events.push(eventId);
+
+        // Update Firestore
+        const userRef = doc(db, "users", currentUser.value.id);
+        await updateDoc(userRef, {
+          events: arrayUnion(eventId),
+        });
+
+        console.log(`Event ${eventId} added to user ${currentUser.value.id}`);
+      }
 
       return { success: true };
     } catch (error: any) {
+      console.error("Error adding event to user:", error);
       return { error: error.message };
     }
   };
