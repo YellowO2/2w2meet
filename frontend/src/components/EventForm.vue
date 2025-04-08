@@ -33,8 +33,8 @@ async function handleSubmit() {
       errorMessage.value = "Event name cannot be empty.";
       return;
     } else if (eventName.value.length > 50) {
-      eventName.value = eventName.value.substring(0, 50);
-      errorMessage.value = "Event name truncated to 50 characters.";
+      errorMessage.value = "Event name must be below 50 characters.";
+      return;
     }
 
     // Date Range validation
