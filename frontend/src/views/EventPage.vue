@@ -9,6 +9,7 @@ import LocationVoting from "../components/LocationVoting.vue";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import { EventController } from "../controllers/EventController";
+import { useAuth } from "../services/AuthService";
 import type { Event } from "../../../shared/Event";
 import type { Establishment } from "../../../shared/Location";
 import type { Participant } from "../../../shared/Participant";
@@ -16,17 +17,19 @@ import type { Participant } from "../../../shared/Participant";
 // Initialize controller and route
 const route = useRoute();
 const controller = new EventController();
+const { currentUser, addEventToUser } = useAuth();
 
 // Local states
 const event = ref<Event | null>(null);
 const selectedTimeSlots = ref(new Set<string>());
 const meetupLocations = ref<Establishment[]>([]);
-const currentUser = ref<Participant | null>();
+const guestUser = ref<Participant | null>();
 const userName = ref("");
 const emailAddress = ref("");
 const hasUnsavedChanges = ref(false);
 const originalEventState = ref<Event | null>(null);
 const errorMessage = ref("");
+const accessDenied = ref(false);
 
 // Fetch event data on mount
 onMounted(async () => {
@@ -36,11 +39,35 @@ onMounted(async () => {
   await controller.fetchEvent(eventId);
   event.value = controller.getEvent().value;
 
+  // Check if event is private and user is not logged in
+  if (event.value && event.value.isPublic === false && !currentUser.value) {
+    accessDenied.value = true;
+    return;
+  }
+
   // Store original state for comparison
   if (event.value) {
     // Used to create deep copy
     originalEventState.value = JSON.parse(JSON.stringify(event.value));
     meetupLocations.value = event.value.meetupLocations;
+
+    // If logged in user, find their participant entry or create one
+    if (currentUser.value) {
+      const existingParticipant = event.value.participants.find(
+        (p) => p.email === currentUser.value?.email
+      );
+
+      if (existingParticipant) {
+        guestUser.value = existingParticipant;
+        selectedTimeSlots.value = new Set(existingParticipant.availability);
+      } else {
+        // User is logged in but not yet a participant in this event
+        loginAsRegistered();
+      }
+
+      // Add event to user's events list if not already there
+      await addEventToUser(event.value.id);
+    }
   }
 });
 
@@ -72,9 +99,9 @@ const dates = computed(() => {
   return dates;
 });
 
-function login() {
+function loginAsGuest() {
   if (userName.value.trim()) {
-    currentUser.value = {
+    guestUser.value = {
       // TODO: Fix id generation
       // logical OR ('||') has lower precedence than addition ('+'),
       // without the parentheses 0 would bind to 1 instead of length.
@@ -82,7 +109,19 @@ function login() {
       name: userName.value,
       availability: [],
     };
-    event.value?.participants.push(currentUser.value);
+    event.value?.participants.push(guestUser.value);
+  }
+}
+
+function loginAsRegistered() {
+  if (currentUser.value) {
+    guestUser.value = {
+      id: currentUser.value.id,
+      name: currentUser.value.displayName,
+      email: currentUser.value.email,
+      availability: [],
+    };
+    event.value?.participants.push(guestUser.value);
   }
 }
 
@@ -95,7 +134,7 @@ function saveEvent() {
   }
 }
 function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
-  if (!currentUser.value) {
+  if (!guestUser.value && !currentUser.value) {
     alert("Please log in to select time slots.");
     return;
   }
@@ -131,33 +170,34 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
  */
 function findUser() {
   return event.value?.participants.findIndex(
-    (p) => p.id === currentUser.value?.id
+    (p) => p.id === (guestUser.value?.id || currentUser.value?.id)
   );
 }
 
 function voteLocation(location: Establishment) {
-  if (!currentUser.value) {
+  if (!guestUser.value && !currentUser.value) {
     alert("Please log in to vote for a location");
     return;
   }
 
+  const userName = guestUser.value?.name || currentUser.value?.displayName;
+  if (!userName) return;
+
   // Remove user's vote from all locations
   meetupLocations.value.forEach((loc) => {
-    const index = currentUser.value
-      ? loc.votedBy.indexOf(currentUser.value.name)
-      : -1;
+    const index = loc.votedBy.indexOf(userName);
     if (index !== -1) {
       loc.votedBy.splice(index, 1);
     }
   });
 
   // Add vote to selected location
-  location.votedBy.push(currentUser.value.name);
+  location.votedBy.push(userName);
   checkForChanges();
 }
 
 function copyUrl() {
-  const url = route.fullPath as string;
+  const url = window.location.href;
   navigator.clipboard
     .writeText(url)
     .then(() => {
@@ -171,7 +211,9 @@ function copyUrl() {
 function submitEmail() {
   errorMessage.value = "";
 
-  if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailAddress.value)) {
+  if (
+    !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailAddress.value)
+  ) {
     errorMessage.value = "Please enter a valid email address.";
     return;
   }
@@ -191,93 +233,132 @@ function logout() {
     );
     if (!confirmed) return;
   }
+
+  // Only log out of this event, not the account
+  guestUser.value = null;
   location.reload();
 }
 </script>
 
 <template>
   <div class="p-4">
-    <h1>{{ event?.name }}</h1>
-    <p>Location: {{ event?.area.name }}</p>
-
-    <!-- Copy URL and User Info Section -->
-    <div class="mb-4 mt-4 flex justify-between items-center">
-      <Button v-if="hasUnsavedChanges" class="fixed shadow-lg" label="Save Changes" icon="pi pi-save" @click="saveEvent"
-        severity="warning" />
-      <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
-      <div v-if="currentUser" class="flex items-center gap-2">
-        <span>Welcome, {{ currentUser.name }}</span>
-        <Button label="Logout" @click="logout" severity="secondary" />
-      </div>
+    <div v-if="accessDenied" class="p-8 text-center">
+      <h2 class="text-2xl mb-4">This event is private</h2>
+      <p class="mb-4">You need to be logged in to access this event.</p>
+      <router-link to="/">
+        <Button label="Go to Home" />
+      </router-link>
     </div>
 
-    <!-- Inline Login Section -->
-    <div v-if="!currentUser" class="mb-6 p-4 border rounded-lg bg-gray-50">
-      <h2 class="font-semibold mb-2">Join the Event</h2>
-      <div class="flex flex-col gap-3">
-        <InputText v-model="userName" placeholder="Enter your name" />
-        <!-- <InputText
-          v-model="userPassword"
-          type="password"
-          placeholder="Password (optional)"
-        /> -->
-        <Button label="Join Event" @click="login" />
-      </div>
-    </div>
+    <div v-else>
+      <h1>{{ event?.name }}</h1>
+      <p>Location: {{ event?.area.name }}</p>
 
-    <!-- Tabs Section -->
-    <TabView>
-      <TabPanel header="When" value="0">
-        <div class="mb-4">
-          <h2>Availability</h2>
-          <div class="overflow-x-auto">
-            <div class="flex gap-4">
-              <TimeSlotSelector v-for="date in dates" :key="date" :date="date"
-                :time-range="[event?.timeRange.start, event?.timeRange.end]" :participants="event?.participants"
-                :current-user-selections="selectedTimeSlots" :disabled="!currentUser"
-                @update:selected="(slots) => toggleTimeSlots(date, slots)" />
+      <!-- Copy URL and User Info Section -->
+      <div class="mb-4 mt-4 flex justify-between items-center">
+        <Button
+          v-if="hasUnsavedChanges"
+          class="fixed shadow-lg"
+          label="Save Changes"
+          icon="pi pi-save"
+          @click="saveEvent"
+          severity="warning"
+        />
+        <Button label="Copy Event URL" icon="pi pi-copy" @click="copyUrl" />
+        <div v-if="guestUser || currentUser" class="flex items-center gap-2">
+          <span
+            >Welcome, {{ guestUser?.name || currentUser?.displayName }}</span
+          >
+          <Button label="Logout" @click="logout" severity="secondary" />
+        </div>
+      </div>
+
+      <!-- Inline Login Section -->
+      <div
+        v-if="!guestUser && !currentUser"
+        class="mb-6 p-4 border rounded-lg bg-gray-50"
+      >
+        <h2 class="font-semibold mb-2">Join the Event</h2>
+        <div class="flex flex-col gap-3">
+          <InputText v-model="userName" placeholder="Enter your name" />
+          <Button label="Join Event" @click="loginAsGuest" />
+        </div>
+      </div>
+
+      <!-- Tabs Section -->
+      <TabView>
+        <TabPanel header="When" value="0">
+          <div class="mb-4">
+            <h2>Availability</h2>
+            <div class="overflow-x-auto">
+              <div class="flex gap-4">
+                <TimeSlotSelector
+                  v-for="date in dates"
+                  :key="date"
+                  :date="date"
+                  :time-range="[event?.timeRange.start, event?.timeRange.end]"
+                  :participants="event?.participants"
+                  :current-user-selections="selectedTimeSlots"
+                  :disabled="!guestUser && !currentUser"
+                  @update:selected="(slots) => toggleTimeSlots(date, slots)"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </TabPanel>
+        </TabPanel>
 
-      <TabPanel v-if="meetupLocations.length > 0" header="Where" value="1">
-        <div class="mb-4">
-          <h2>Location Voting</h2>
-          <LocationVoting :locations="meetupLocations" :disabled="!currentUser" :user-vote="currentUser
-            ? meetupLocations.find(
-              (loc) =>
-                currentUser?.name &&
-                loc.votedBy.includes(currentUser.name)
-            )?.name || ''
-            : ''
-            " @update:voteLocation="voteLocation" />
-        </div>
-      </TabPanel>
-      <TabPanel v-else header="Where" value="1">
-        <div class="mb-4">
-          <h2>Location Voting</h2>
-          <h3>No nearby locations found.</h3>
-        </div>
-      </TabPanel>
+        <TabPanel v-if="meetupLocations.length > 0" header="Where" value="1">
+          <div class="mb-4">
+            <h2>Location Voting</h2>
+            <LocationVoting
+              :locations="meetupLocations"
+              :disabled="!guestUser && !currentUser"
+              :user-vote="
+                guestUser?.name || currentUser?.displayName
+                  ? meetupLocations.find((loc) =>
+                      loc.votedBy.includes(
+                        guestUser?.name || currentUser?.displayName || ''
+                      )
+                    )?.name || ''
+                  : ''
+              "
+              @update:voteLocation="voteLocation"
+            />
+          </div>
+        </TabPanel>
+        <TabPanel v-else header="Where" value="1">
+          <div class="mb-4">
+            <h2>Location Voting</h2>
+            <h3>No nearby locations found.</h3>
+          </div>
+        </TabPanel>
+      </TabView>
 
-    </TabView>
-
-    <!-- Inline Notification Opt-in Section -->
-    <div v-if="currentUser && !currentUser.email" class="mb-6 p-4 border rounded-lg bg-gray-50">
-      <h2 class="font-semibold mb-2">Opt-in for Event Notification</h2>
-      <div class="flex flex-col gap-3">
-        <InputText v-model="emailAddress" placeholder="Enter your email" />
-        <Button label="Notify me when finalised" @click="submitEmail" />
+      <!-- Inline Notification Opt-in Section -->
+      <div
+        v-if="
+          (guestUser && !guestUser.email) ||
+          (!guestUser && currentUser && !currentUser.email)
+        "
+        class="mb-6 p-4 border rounded-lg bg-gray-50"
+      >
+        <h2 class="font-semibold mb-2">Opt-in for Event Notification</h2>
+        <div class="flex flex-col gap-3">
+          <InputText v-model="emailAddress" placeholder="Enter your email" />
+          <Button label="Notify me when finalised" @click="submitEmail" />
+        </div>
       </div>
-    </div>
 
-    <div v-if="errorMessage" class="field mt-4">
-      <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
-        <span class="font-medium">{{ errorMessage }}</span>
+      <div v-if="errorMessage" class="field mt-4">
+        <div
+          class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+          role="alert"
+        >
+          <span class="font-medium">{{ errorMessage }}</span>
+        </div>
       </div>
-    </div>
 
-    <Footer />
+      <Footer />
+    </div>
   </div>
 </template>

@@ -9,12 +9,13 @@ import InputText from "primevue/inputtext";
 import Aura from "@primeuix/themes/aura";
 import "./style.css";
 import "primeicons/primeicons.css";
+import "./firebase";
 
 const app = createApp(App);
 app.use(PrimeVue, {
-	theme: {
-		preset: Aura,
-	},
+  theme: {
+    preset: Aura,
+  },
 });
 
 app.use(router);
