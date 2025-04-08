@@ -35,7 +35,7 @@ export class EventService {
 
 	private static async initMeetupLocations(eventFormData: Partial<Event>): Promise<Establishment[]> {
 		const latlng = { lat: eventFormData.area.lat, lng: eventFormData.area.lng } as LatLng;
-		return (await searchPlaces(latlng, 500, "cafe", "bus_station")).slice(0, 5);
+		return (await searchPlaces(latlng, 500, "cafe", "bus_station")).slice(0, 5).sort((e1, e2) => e1.distance - e2.distance);
 	}
 
 	static async getExpiredEvent(): Promise<Event[]> {
