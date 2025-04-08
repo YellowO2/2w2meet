@@ -4,12 +4,15 @@ import Calendar from "primevue/calendar";
 import InputText from "primevue/inputtext";
 import Slider from "primevue/slider";
 import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import { useRouter } from "vue-router";
 import LocationSelector from "./LocationSelector.vue";
 import { EventController } from "../controllers/EventController";
+import { useAuth } from "../services/AuthService";
 
 const router = useRouter();
 const controller = new EventController();
+const { currentUser, addEventToUser } = useAuth();
 
 const eventName = ref("");
 const dateRange = ref();
@@ -17,6 +20,7 @@ const timeRange = ref([9, 17]);
 const selectedLocation = ref();
 const responseDeadline = ref();
 const errorMessage = ref("");
+const publicEvent = ref(true);
 
 async function handleSubmit() {
   try {
@@ -97,7 +101,14 @@ async function handleSubmit() {
       },
       area: selectedLocation.value,
       responseDeadline: responseDeadline.value.toISOString(),
+      createdBy: currentUser.value?.id || null,
+      isPublic: publicEvent.value,
     });
+
+    // If user is logged in, add event to their profile
+    if (currentUser.value) {
+      await addEventToUser(eventId);
+    }
 
     // Redirect to the event page
     router.push(`/event/${eventId}`);
@@ -150,6 +161,11 @@ function formatTime(value: number) {
     <div class="field mt-4">
       <label>Response Deadline</label>
       <Calendar v-model="responseDeadline" class="w-full" />
+    </div>
+
+    <div class="field mt-4 flex items-center gap-2">
+      <Checkbox v-model="publicEvent" :binary="true" inputId="publicEvent" />
+      <label for="publicEvent">Allow non-registered users to participate</label>
     </div>
 
     <div v-if="errorMessage" class="field mt-4">
