@@ -9,7 +9,6 @@ import LocationSelector from "./LocationSelector.vue";
 import { EventController } from "../controllers/EventController";
 
 const router = useRouter();
-// TODO: Move controller to backend
 const controller = new EventController();
 
 const eventName = ref("");
@@ -23,19 +22,40 @@ async function handleSubmit() {
   try {
     errorMessage.value = "";
 
-    if (!eventName.value) {
-      eventName.value = "Untitled Event";
+    // Event Name validation
+    if (!eventName.value.trim()) {
+      errorMessage.value = "Event name cannot be empty.";
+      return;
     } else if (eventName.value.length > 50) {
       eventName.value = eventName.value.substring(0, 50);
       errorMessage.value = "Event name truncated to 50 characters.";
     }
 
-    if (!dateRange.value) {
+    // Date Range validation
+    if (
+      !dateRange.value ||
+      !Array.isArray(dateRange.value) ||
+      dateRange.value.length !== 2
+    ) {
       errorMessage.value = "Please select a valid date range.";
       return;
     }
 
-    if (!timeRange.value) {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Set to start of today
+
+    // Check if dates are in the future
+    if (dateRange.value[0] < now) {
+      errorMessage.value = "Date Range: Event dates must be in the future.";
+      return;
+    }
+
+    // Time Range validation
+    if (
+      !timeRange.value ||
+      !Array.isArray(timeRange.value) ||
+      timeRange.value.length !== 2
+    ) {
       timeRange.value = [9, 17];
       errorMessage.value = "Default time range applied.";
     }
@@ -45,13 +65,26 @@ async function handleSubmit() {
       return;
     }
 
+    // Response Deadline validation
     if (!responseDeadline.value) {
-      errorMessage.value = "Please select a deadline.";
+      errorMessage.value = "Please select a response deadline.";
+      return;
+    }
+
+    // Check if response deadline is in the future
+    if (responseDeadline.value < now) {
+      errorMessage.value = "Response deadline must be in the future.";
+      return;
+    }
+
+    // Check if response deadline is before or within the event date range
+    if (responseDeadline.value > dateRange.value[0]) {
+      errorMessage.value =
+        "Response deadline must be before the event start date.";
       return;
     }
 
     // Create event using controller
-    // TODO: Replace this with a backend route
     const eventId = await controller.createEvent({
       name: eventName.value,
       dateRange: {
@@ -95,7 +128,14 @@ function formatTime(value: number) {
 
     <div class="field mt-4">
       <label>Time Range</label>
-      <Slider v-model="timeRange" :min="0" :max="24" :step="0.5" range class="w-full" />
+      <Slider
+        v-model="timeRange"
+        :min="0"
+        :max="24"
+        :step="0.5"
+        range
+        class="w-full"
+      />
       <div class="mt-2 text-center text-gray-600">
         Selected Time: {{ formatTime(timeRange[0]) }} -
         {{ formatTime(timeRange[1]) }}
@@ -113,7 +153,10 @@ function formatTime(value: number) {
     </div>
 
     <div v-if="errorMessage" class="field mt-4">
-      <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+      <div
+        class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+        role="alert"
+      >
         <span class="font-medium">{{ errorMessage }}</span>
       </div>
     </div>

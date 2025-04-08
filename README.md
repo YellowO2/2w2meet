@@ -56,26 +56,20 @@ An implementation of a meeting scheduler like when2meet, enhanced with location 
     cd ./frontend
     ```
 
-3. **Create a `.env` file**  
-   In `./frontend`, create a `.env` file with the following variables:
-   ```
-   VITE_FIREBASE_API_KEY=your_api_key
-   SERVICE_EMAIL_PASS=your_email_service_password
-   ```
 
-4. **Install frontend dependencies**
+3. **Install frontend dependencies**
 
     ```bash
     npm install
     ```
 
-5. **Start the development server**
+4. **Start the development server**
 
     ```bash
     npm run dev
     ```
 
-6. **Access the application**  
+5. **Access the application**  
    Open your browser and navigate to `http://localhost:5173`
 
 ## Starting the Backend Services
