@@ -50,7 +50,24 @@ const handleSignup = async () => {
   loading.value = false;
 
   if (result.error) {
-    errorMessage.value = result.error;
+    // Parse error message to display cleaner version
+    if (result.error.includes("Firebase:")) {
+      // Extract the message between the square brackets if it exists
+      const bracketMatch = result.error.match(/\[(.*?)\]/);
+      if (bracketMatch && bracketMatch[1]) {
+        errorMessage.value = bracketMatch[1];
+      } else {
+        // If no brackets, extract the message between "Firebase: " and " (auth/"
+        const errorMatch = result.error.match(/Firebase: (.*?) \(auth\//);
+        if (errorMatch && errorMatch[1]) {
+          errorMessage.value = errorMatch[1];
+        } else {
+          errorMessage.value = result.error;
+        }
+      }
+    } else {
+      errorMessage.value = result.error;
+    }
   } else {
     // Registration successful
     emit("update:visible", false);
