@@ -66,7 +66,7 @@ export class EventService {
 
 		return {
 			date: new Date(maxTimeslotId.slice(0, maxTimeslotId.indexOf("Z"))).toLocaleDateString("en-GB", tw2meetNotificationDateFormat),
-			time: maxTimeslotId.split("T")[1].slice(0, 5),
+			time: maxTimeslotId.split("Z")[1].slice(1, 6),
 		};
 	}
 
