@@ -10,6 +10,7 @@ import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import { EventController } from "../controllers/EventController";
 import { useAuth } from "../services/AuthService";
+import { GeminiService } from "../services/GeminiService";
 import type { Event } from "../../../shared/Event";
 import type { Establishment } from "../../../shared/Location";
 import type { Participant } from "../../../shared/Participant";
@@ -30,6 +31,9 @@ const hasUnsavedChanges = ref(false);
 const originalEventState = ref<Event | null>(null);
 const errorMessage = ref("");
 const accessDenied = ref(false);
+const tripDescription = ref("");
+const generatedPlan = ref("");
+const isGeneratingPlan = ref(false);
 
 // Fetch event data on mount
 onMounted(async () => {
@@ -259,6 +263,29 @@ function logout() {
   guestUser.value = null;
   location.reload();
 }
+
+async function generateTripPlan() {
+  if (!event.value?.area) {
+    alert("Event location is required");
+    return;
+  }
+
+  if (!tripDescription.value.trim()) {
+    alert("Please enter a description of what you'd like to do");
+    return;
+  }
+
+  isGeneratingPlan.value = true;
+  try {
+    const plan = await GeminiService.generateTripPlan(tripDescription.value, event.value.area);
+    generatedPlan.value = plan;
+  } catch (error) {
+    console.error('Error generating plan:', error);
+    alert('Failed to generate trip plan. Please try again.');
+  } finally {
+    isGeneratingPlan.value = false;
+  }
+}
 </script>
 
 <template>
@@ -353,6 +380,34 @@ function logout() {
           <div class="mb-4">
             <h2>Location Voting</h2>
             <h3>No nearby locations found.</h3>
+          </div>
+        </TabPanel>
+
+        <TabPanel header="Trip Ideas 🗺️" value="2">
+          <div class="mb-4">
+            <h2 class="text-xl font-semibold mb-4">AI Trip Planner</h2>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">
+                What would you like to do? (e.g., "Plan a casual afternoon hangout" or "Organize a full day of activities")
+              </label>
+              <div class="flex gap-2">
+                <InputText 
+                  v-model="tripDescription" 
+                  placeholder="Describe your ideal trip..."
+                  class="flex-1"
+                />
+                <Button 
+                  label="Generate Plan" 
+                  @click="generateTripPlan"
+                  :loading="isGeneratingPlan"
+                  :disabled="!tripDescription.trim()"
+                />
+              </div>
+            </div>
+
+            <div v-if="generatedPlan" class="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div class="whitespace-pre-line">{{ generatedPlan }}</div>
+            </div>
           </div>
         </TabPanel>
       </TabView>
