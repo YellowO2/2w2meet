@@ -151,6 +151,11 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
   const userIndex = findUser();
 
   if (userIndex !== undefined && userIndex !== -1) {
+    console.log(
+      "Updating availability for participant:",
+      event.value?.participants[userIndex]
+    );
+
     const datePrefix = date;
     const existingSlots = new Set(
       event.value?.participants[userIndex].availability
@@ -164,9 +169,16 @@ function toggleTimeSlots(date: string, selectedSlotIds: string[]) {
     // Add new selections
     event.value!.participants[userIndex].availability.push(...selectedSlotIds);
 
+    console.log(
+      "Updated availability:",
+      event.value?.participants[userIndex].availability
+    );
+
     selectedTimeSlots.value = new Set(
       event.value!.participants[userIndex].availability
     );
+  } else {
+    console.warn("User not found in participants list.");
   }
 
   checkForChanges();
