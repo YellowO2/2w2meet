@@ -9,6 +9,7 @@ import InputText from "primevue/inputtext";
 import Aura from "@primeuix/themes/aura";
 import "./style.css";
 import "primeicons/primeicons.css";
+import "weather-icons/css/weather-icons.css";
 import "./firebase";
 
 const app = createApp(App);

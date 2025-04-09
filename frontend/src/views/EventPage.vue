@@ -99,6 +99,15 @@ const dates = computed(() => {
   return dates;
 });
 
+// Add computed property for event location
+const eventLocation = computed(() => {
+  if (!event.value) return null;
+  return {
+    lat: event.value.area.lat,
+    lng: event.value.area.lng,
+  };
+});
+
 function loginAsGuest() {
   if (userName.value.trim()) {
     guestUser.value = {
@@ -293,13 +302,15 @@ function logout() {
             <div class="overflow-x-auto">
               <div class="flex gap-4">
                 <TimeSlotSelector
-                  v-for="date in dates"
+                  v-for="(date, index) in dates"
                   :key="date"
                   :date="date"
                   :time-range="[event?.timeRange.start, event?.timeRange.end]"
                   :participants="event?.participants"
                   :current-user-selections="selectedTimeSlots"
                   :disabled="!guestUser && !currentUser"
+                  :event-location="eventLocation || undefined"
+                  :is-first-day="index === 0"
                   @update:selected="(slots) => toggleTimeSlots(date, slots)"
                 />
               </div>

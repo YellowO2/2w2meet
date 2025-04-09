@@ -169,7 +169,7 @@ const switchToLogin = () => {
         />
       </div>
 
-      <div v-if="errorMessage" class="p-error px-2 py-1 text-sm">
+      <div v-if="errorMessage" class="p-error px-2 py-1 text-sm text-red-600">
         {{ errorMessage }}
       </div>
 
