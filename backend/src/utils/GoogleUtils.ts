@@ -20,7 +20,7 @@ const placesResultMapper = (location: LatLng) => {
 				lng: place.geometry.location.lng,
 			},
 			distance: await getWalkingDistance(location, { lat: place.geometry.location.lat, lng: place.geometry.location.lng }),
-			rating: place.rating,
+			rating: place.rating || 0.0,
 			category: place.types,
 			votedBy: [],
 			link: `http://maps.google.com/?ll=${place.geometry.location.lat},${place.geometry.location.lng}`,
