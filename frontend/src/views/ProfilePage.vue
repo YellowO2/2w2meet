@@ -119,6 +119,15 @@ const getUserRole = (event: Event) => {
   }
   return "Participant";
 };
+
+const generateAvatarColor = (name: string) => {
+  const colors = ["#FFB6C1", "#FF69B4", "#FF1493", "#DB7093", "#C71585"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 </script>
 
 <template>
@@ -139,14 +148,17 @@ const getUserRole = (event: Event) => {
         <template #header>
           <div class="flex justify-center p-4 bg-gray-100 dark:bg-gray-800">
             <Avatar
-              :image="currentUser.photoURL || undefined"
-              :label="
-                currentUser.photoURL
-                  ? undefined
-                  : currentUser.displayName.charAt(0).toUpperCase()
-              "
+              :image="currentUser.photoURL || ''"
+              :label="currentUser.displayName?.charAt(0).toUpperCase() || 'U'"
               shape="circle"
               size="xlarge"
+              class="flex items-center justify-center text-2xl font-bold"
+              :style="{
+                backgroundColor: !currentUser.photoURL
+                  ? generateAvatarColor(currentUser.displayName || 'U')
+                  : 'transparent',
+                color: !currentUser.photoURL ? '#ffffff' : 'inherit',
+              }"
             />
           </div>
         </template>

@@ -66,6 +66,15 @@ const switchToSignup = () => {
 const switchToLogin = () => {
   loginModalVisible.value = true;
 };
+
+const generateAvatarColor = (name) => {
+  const colors = ["#DB7093", "#C71585"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 </script>
 
 <template>
@@ -117,16 +126,19 @@ const switchToLogin = () => {
                   class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
                 >
                   <Avatar
-                    :image="currentUser.photoURL || undefined"
+                    :image="currentUser.photoURL || ''"
                     :label="
-                      currentUser.photoURL
-                        ? undefined
-                        : currentUser.displayName.charAt(0).toUpperCase()
+                      currentUser.displayName?.charAt(0).toUpperCase() || 'U'
                     "
                     shape="circle"
                     size="small"
                     class="mr-1"
-                    style="background-color: #4f46e5; color: white"
+                    :style="{
+                      backgroundColor: !currentUser.photoURL
+                        ? generateAvatarColor(currentUser.displayName || 'User')
+                        : 'transparent',
+                      color: !currentUser.photoURL ? 'white' : 'inherit',
+                    }"
                   />
                   <span>{{ currentUser.displayName }}</span>
                   <i class="pi pi-angle-down text-xs"></i>
@@ -202,16 +214,19 @@ const switchToLogin = () => {
             <div v-if="currentUser">
               <div class="flex items-center mb-3">
                 <Avatar
-                  :image="currentUser.photoURL || undefined"
+                  :image="currentUser.photoURL || ''"
                   :label="
-                    currentUser.photoURL
-                      ? undefined
-                      : currentUser.displayName.charAt(0).toUpperCase()
+                    currentUser.displayName?.charAt(0).toUpperCase() || 'U'
                   "
                   shape="circle"
                   size="normal"
                   class="mr-2"
-                  style="background-color: #4f46e5; color: white"
+                  :style="{
+                    backgroundColor: !currentUser.photoURL
+                      ? generateAvatarColor(currentUser.displayName || 'User')
+                      : 'transparent',
+                    color: !currentUser.photoURL ? 'white' : 'inherit',
+                  }"
                 />
                 <span class="text-gray-700 dark:text-gray-300 font-medium">{{
                   currentUser.displayName
